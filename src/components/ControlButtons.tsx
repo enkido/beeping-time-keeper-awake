@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Button } from '@/components/ui/button';
-import { Play, Stop, RefreshCcw } from 'lucide-react';
+import { Play, Square, RefreshCcw } from 'lucide-react';
 
 interface ControlButtonsProps {
   isRunning: boolean;
@@ -25,7 +25,7 @@ const ControlButtons: React.FC<ControlButtonsProps> = ({
           className="flex-1 text-lg py-6"
           size="lg"
         >
-          <Stop className="mr-2" size={24} />
+          <Square className="mr-2" size={24} />
           Stop
         </Button>
       ) : (

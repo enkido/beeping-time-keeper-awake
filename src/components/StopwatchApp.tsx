@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import TimerDisplay from '@/components/TimerDisplay';
 import IntervalInput from '@/components/IntervalInput';
@@ -13,15 +14,15 @@ const StopwatchApp: React.FC = () => {
   const [interval, setInterval] = useState(30); // Default 30 seconds
   const [isBeeping, setIsBeeping] = useState(false);
   const wakeLock = useWakeLock();
-  const timerRef = useRef<NodeJS.Timeout | null>(null);
+  const timerRef = useRef<number | null>(null);
   const lastBeepRef = useRef(0);
   const { toast } = useToast();
 
   // Clean up timer on unmount
   useEffect(() => {
     return () => {
-      if (timerRef.current) {
-        clearInterval(timerRef.current);
+      if (timerRef.current !== null) {
+        window.clearInterval(timerRef.current);
       }
       wakeLock.release();
     };
@@ -54,11 +55,11 @@ const StopwatchApp: React.FC = () => {
     
     setIsRunning(true);
     
-    if (timerRef.current) {
-      clearInterval(timerRef.current);
+    if (timerRef.current !== null) {
+      window.clearInterval(timerRef.current);
     }
     
-    timerRef.current = setInterval(() => {
+    timerRef.current = window.setInterval(() => {
       setSeconds(prev => prev + 1);
     }, 1000);
   }, [wakeLock, toast]);
@@ -66,8 +67,8 @@ const StopwatchApp: React.FC = () => {
   const handleStop = useCallback(async () => {
     setIsRunning(false);
     
-    if (timerRef.current) {
-      clearInterval(timerRef.current);
+    if (timerRef.current !== null) {
+      window.clearInterval(timerRef.current);
       timerRef.current = null;
     }
     
