@@ -12,6 +12,7 @@ interface IntervalInputProps {
 const IntervalInput: React.FC<IntervalInputProps> = ({ interval, onChange }) => {
   // Use logarithmic scale for better precision on lower values
   const [sliderValue, setSliderValue] = useState(mapToSlider(interval));
+  const [inputExpression, setInputExpression] = useState(interval.toString());
   
   // Convert between actual interval values and slider positions
   function mapToSlider(seconds: number): number {
@@ -27,19 +28,52 @@ const IntervalInput: React.FC<IntervalInputProps> = ({ interval, onChange }) => 
   // Update slider value when interval changes externally
   useEffect(() => {
     setSliderValue(mapToSlider(interval));
+    
+    // Only update the expression if it doesn't match the current value
+    // This prevents overwriting user's expression when slider is moved
+    if (parseFloat(inputExpression) !== interval) {
+      setInputExpression(interval.toFixed(1));
+    }
   }, [interval]);
   
   const handleSliderChange = (value: number[]) => {
     const newValue = value[0];
     setSliderValue(newValue);
-    onChange(mapFromSlider(newValue));
+    const calculatedValue = mapFromSlider(newValue);
+    onChange(calculatedValue);
+    setInputExpression(calculatedValue.toFixed(1));
+  };
+
+  // Evaluate mathematical expressions
+  const evaluateExpression = (expression: string): number | null => {
+    try {
+      // Replace all commas with dots for decimal handling
+      const sanitizedExpression = expression.replace(/,/g, '.');
+      
+      // Use Function constructor to evaluate the expression
+      // eslint-disable-next-line no-new-func
+      const result = Function('"use strict"; return (' + sanitizedExpression + ')')();
+      
+      if (typeof result === 'number' && isFinite(result)) {
+        return result;
+      }
+      return null;
+    } catch (e) {
+      // If evaluation fails, return null
+      return null;
+    }
   };
 
   // Direct input for precise value entry
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = parseFloat(e.target.value);
-    if (!isNaN(value) && value >= 0.1 && value <= 300) {
-      onChange(value);
+    const rawInput = e.target.value;
+    setInputExpression(rawInput);
+    
+    // Try to evaluate the expression
+    const result = evaluateExpression(rawInput);
+    
+    if (result !== null && result >= 0.1 && result <= 300) {
+      onChange(result);
     }
   };
 
@@ -77,11 +111,10 @@ const IntervalInput: React.FC<IntervalInputProps> = ({ interval, onChange }) => 
       <div className="pt-2">
         <Input
           id="interval"
-          type="number"
+          type="text"
           min="0.1"
           max="300"
-          step="0.1"
-          value={interval}
+          value={inputExpression}
           onChange={handleInputChange}
           className="w-full text-center"
         />
