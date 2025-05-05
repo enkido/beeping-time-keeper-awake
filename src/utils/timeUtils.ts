@@ -1,16 +1,18 @@
 
 /**
- * Format seconds into a readable time string (MM:SS or HH:MM:SS)
+ * Format seconds into a readable time string (MM:SS.ms or HH:MM:SS.ms)
  */
-export const formatTime = (seconds: number): string => {
-  const hours = Math.floor(seconds / 3600);
-  const minutes = Math.floor((seconds % 3600) / 60);
-  const remainingSeconds = Math.floor(seconds % 60);
+export const formatTime = (totalMilliseconds: number): string => {
+  const milliseconds = Math.floor(totalMilliseconds % 1000);
+  const seconds = Math.floor(totalMilliseconds / 1000) % 60;
+  const minutes = Math.floor(totalMilliseconds / (1000 * 60)) % 60;
+  const hours = Math.floor(totalMilliseconds / (1000 * 60 * 60));
   
   const paddedMinutes = String(minutes).padStart(2, '0');
-  const paddedSeconds = String(remainingSeconds).padStart(2, '0');
+  const paddedSeconds = String(seconds).padStart(2, '0');
+  const paddedMilliseconds = String(milliseconds).padStart(3, '0');
   
   return hours > 0 
-    ? `${hours}:${paddedMinutes}:${paddedSeconds}`
-    : `${paddedMinutes}:${paddedSeconds}`;
+    ? `${hours}:${paddedMinutes}:${paddedSeconds}.${paddedMilliseconds}`
+    : `${paddedMinutes}:${paddedSeconds}.${paddedMilliseconds}`;
 };

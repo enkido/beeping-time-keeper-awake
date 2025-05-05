@@ -6,12 +6,12 @@ import ControlButtons from '@/components/ControlButtons';
 import WakeLockIndicator from '@/components/WakeLockIndicator';
 import { useWakeLock } from '@/hooks/useWakeLock';
 import { playBeep, initAudio } from '@/utils/soundUtils';
-import { useToast } from "@/components/ui/use-toast";
+import { useToast } from "@/hooks/use-toast";
 
 const StopwatchApp: React.FC = () => {
-  const [seconds, setSeconds] = useState(0);
+  const [milliseconds, setMilliseconds] = useState(0);
   const [isRunning, setIsRunning] = useState(false);
-  const [interval, setInterval] = useState(30); // Default 30 seconds
+  const [interval, setInterval] = useState(30000); // Default 30 seconds (in milliseconds)
   const [isBeeping, setIsBeeping] = useState(false);
   const wakeLock = useWakeLock();
   const timerRef = useRef<number | null>(null);
@@ -30,15 +30,15 @@ const StopwatchApp: React.FC = () => {
 
   // Check if it's time to beep
   useEffect(() => {
-    if (isRunning && seconds > 0 && seconds % interval === 0 && seconds !== lastBeepRef.current) {
+    if (isRunning && milliseconds > 0 && milliseconds % interval === 0 && milliseconds !== lastBeepRef.current) {
       playBeep();
-      lastBeepRef.current = seconds;
+      lastBeepRef.current = milliseconds;
       
       // Visual feedback when beeping
       setIsBeeping(true);
       setTimeout(() => setIsBeeping(false), 500);
     }
-  }, [seconds, interval, isRunning]);
+  }, [milliseconds, interval, isRunning]);
 
   const handleStart = useCallback(async () => {
     // Initialize audio context on first interaction
@@ -60,8 +60,8 @@ const StopwatchApp: React.FC = () => {
     }
     
     timerRef.current = window.setInterval(() => {
-      setSeconds(prev => prev + 1);
-    }, 1000);
+      setMilliseconds(prev => prev + 10); // Update every 10 milliseconds
+    }, 10);
   }, [wakeLock, toast]);
   
   const handleStop = useCallback(async () => {
@@ -83,15 +83,15 @@ const StopwatchApp: React.FC = () => {
   }, [wakeLock, toast]);
   
   const handleReset = useCallback(() => {
-    setSeconds(0);
+    setMilliseconds(0);
     lastBeepRef.current = 0;
   }, []);
 
   return (
     <div className="flex flex-col space-y-8 w-full max-w-md mx-auto">
-      <TimerDisplay seconds={seconds} isBeeping={isBeeping} />
+      <TimerDisplay seconds={milliseconds} isBeeping={isBeeping} />
       
-      <IntervalInput interval={interval} onChange={setInterval} />
+      <IntervalInput interval={interval / 1000} onChange={(value) => setInterval(value * 1000)} />
       
       <ControlButtons
         isRunning={isRunning}
