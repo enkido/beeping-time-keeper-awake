@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import TimerDisplay from '@/components/TimerDisplay';
 import IntervalInput from '@/components/IntervalInput';
@@ -16,7 +15,19 @@ const StopwatchApp: React.FC = () => {
   const wakeLock = useWakeLock();
   const timerRef = useRef<number | null>(null);
   const lastBeepRef = useRef(0);
+  const nextBeepAtRef = useRef(0);
   const { toast } = useToast();
+
+  // Reset nextBeepAt whenever interval changes
+  useEffect(() => {
+    if (isRunning) {
+      // Calculate next beep time from current milliseconds
+      const remainder = milliseconds % interval;
+      nextBeepAtRef.current = remainder === 0 ? 
+        milliseconds + interval : 
+        milliseconds + (interval - remainder);
+    }
+  }, [interval, isRunning, milliseconds]);
 
   // Clean up timer on unmount
   useEffect(() => {
@@ -30,19 +41,31 @@ const StopwatchApp: React.FC = () => {
 
   // Check if it's time to beep
   useEffect(() => {
-    if (isRunning && milliseconds > 0 && milliseconds % interval === 0 && milliseconds !== lastBeepRef.current) {
-      playBeep();
-      lastBeepRef.current = milliseconds;
-      
-      // Visual feedback when beeping
-      setIsBeeping(true);
-      setTimeout(() => setIsBeeping(false), 500);
+    if (isRunning && milliseconds > 0) {
+      // Beep when we reach or pass the next beep time
+      if (milliseconds >= nextBeepAtRef.current && milliseconds !== lastBeepRef.current) {
+        playBeep();
+        lastBeepRef.current = milliseconds;
+        
+        // Calculate next beep time
+        nextBeepAtRef.current = milliseconds + interval;
+        
+        // Visual feedback when beeping
+        setIsBeeping(true);
+        setTimeout(() => setIsBeeping(false), 500);
+      }
     }
   }, [milliseconds, interval, isRunning]);
 
   const handleStart = useCallback(async () => {
     // Initialize audio context on first interaction
     initAudio();
+    
+    // Calculate next beep time from current milliseconds
+    const remainder = milliseconds % interval;
+    nextBeepAtRef.current = remainder === 0 ? 
+      milliseconds + interval : 
+      milliseconds + (interval - remainder);
     
     // Request wake lock to keep screen on
     if (wakeLock.isSupported && !wakeLock.isActive) {
@@ -62,7 +85,7 @@ const StopwatchApp: React.FC = () => {
     timerRef.current = window.setInterval(() => {
       setMilliseconds(prev => prev + 10); // Update every 10 milliseconds
     }, 10);
-  }, [wakeLock, toast]);
+  }, [wakeLock, toast, milliseconds, interval]);
   
   const handleStop = useCallback(async () => {
     setIsRunning(false);
@@ -85,7 +108,8 @@ const StopwatchApp: React.FC = () => {
   const handleReset = useCallback(() => {
     setMilliseconds(0);
     lastBeepRef.current = 0;
-  }, []);
+    nextBeepAtRef.current = interval;
+  }, [interval]);
 
   return (
     <div className="flex flex-col space-y-8 w-full max-w-md mx-auto">
