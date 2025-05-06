@@ -13,6 +13,7 @@ const IntervalInput: React.FC<IntervalInputProps> = ({ interval, onChange }) => 
   // Use logarithmic scale for better precision on lower values
   const [sliderValue, setSliderValue] = useState(mapToSlider(interval));
   const [inputExpression, setInputExpression] = useState(interval.toString());
+  const [lastInputValue, setLastInputValue] = useState(interval);
   
   // Convert between actual interval values and slider positions
   function mapToSlider(seconds: number): number {
@@ -29,17 +30,19 @@ const IntervalInput: React.FC<IntervalInputProps> = ({ interval, onChange }) => 
   useEffect(() => {
     setSliderValue(mapToSlider(interval));
     
-    // Only update the expression if it doesn't match the current value
+    // Only update the expression if the interval changed due to slider movement
     // This prevents overwriting user's expression when slider is moved
-    if (parseFloat(inputExpression) !== interval) {
+    if (interval !== lastInputValue) {
       setInputExpression(interval.toFixed(1));
+      setLastInputValue(interval);
     }
-  }, [interval]);
+  }, [interval, lastInputValue]);
   
   const handleSliderChange = (value: number[]) => {
     const newValue = value[0];
     setSliderValue(newValue);
     const calculatedValue = mapFromSlider(newValue);
+    setLastInputValue(calculatedValue);
     onChange(calculatedValue);
     setInputExpression(calculatedValue.toFixed(1));
   };
@@ -73,6 +76,7 @@ const IntervalInput: React.FC<IntervalInputProps> = ({ interval, onChange }) => 
     const result = evaluateExpression(rawInput);
     
     if (result !== null && result >= 0.1 && result <= 300) {
+      setLastInputValue(result);
       onChange(result);
     }
   };
