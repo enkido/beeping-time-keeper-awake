@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import TimerDisplay from '@/components/TimerDisplay';
 import IntervalInput from '@/components/IntervalInput';
@@ -17,6 +18,11 @@ const StopwatchApp: React.FC = () => {
   const lastBeepRef = useRef(0);
   const nextBeepAtRef = useRef(0);
   const { toast } = useToast();
+
+  // Initialize audio context on first app load
+  useEffect(() => {
+    initAudio();
+  }, []);
 
   // Reset nextBeepAt whenever interval changes
   useEffect(() => {
@@ -43,7 +49,7 @@ const StopwatchApp: React.FC = () => {
   useEffect(() => {
     if (isRunning && milliseconds > 0) {
       // Beep when we reach or pass the next beep time
-      if (milliseconds >= nextBeepAtRef.current && milliseconds !== lastBeepRef.current) {
+      if (milliseconds >= nextBeepAtRef.current) {
         playBeep();
         lastBeepRef.current = milliseconds;
         
