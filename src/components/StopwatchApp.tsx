@@ -4,7 +4,7 @@ import IntervalInput from '@/components/IntervalInput';
 import ControlButtons from '@/components/ControlButtons';
 import WakeLockIndicator from '@/components/WakeLockIndicator';
 import { useWakeLock } from '@/hooks/useWakeLock';
-import { playBeep, initAudio } from '@/utils/soundUtils';
+import { playBeep, initAudio, testBeep } from '@/utils/soundUtils';
 import { useToast } from "@/hooks/use-toast";
 
 const StopwatchApp: React.FC = () => {
@@ -17,23 +17,52 @@ const StopwatchApp: React.FC = () => {
   const lastBeepRef = useRef(0);
   const nextBeepAtRef = useRef(0);
   const { toast } = useToast();
+  const audioInitializedRef = useRef(false);
 
-  // Initialize audio context on app load and also on first user interaction
+  // Initialize audio context on app load
   useEffect(() => {
-    // Try to initialize audio, but it might need user interaction
-    initAudio();
+    console.log('Initializing audio on app load');
+    const initialized = initAudio();
+    audioInitializedRef.current = initialized;
     
-    // Add a one-time click listener to the document to initialize audio on first interaction
-    const handleInitAudio = () => {
+    // Test beep on first render with a delay to ensure browser is ready
+    const testTimeout = setTimeout(() => {
+      console.log('Testing initial beep');
+      testBeep();
+    }, 1000);
+    
+    return () => clearTimeout(testTimeout);
+  }, []);
+  
+  // Add listener for user interaction to initialize audio
+  useEffect(() => {
+    console.log('Setting up user interaction listeners for audio');
+    const interactionEvents = ['click', 'touchstart', 'keydown'];
+    
+    const handleUserInteraction = () => {
+      console.log('User interaction detected - initializing audio');
       initAudio();
-      document.removeEventListener('click', handleInitAudio);
+      audioInitializedRef.current = true;
+      
+      // Remove all event listeners after first interaction
+      interactionEvents.forEach(event => {
+        document.removeEventListener(event, handleUserInteraction);
+      });
+      
+      // Test beep on user interaction
+      testBeep();
     };
     
-    document.addEventListener('click', handleInitAudio);
+    // Add listeners for user interaction events
+    interactionEvents.forEach(event => {
+      document.addEventListener(event, handleUserInteraction);
+    });
     
-    // Cleanup listener on unmount
+    // Clean up listeners on unmount
     return () => {
-      document.removeEventListener('click', handleInitAudio);
+      interactionEvents.forEach(event => {
+        document.removeEventListener(event, handleUserInteraction);
+      });
     };
   }, []);
 
@@ -62,11 +91,12 @@ const StopwatchApp: React.FC = () => {
 
   // Check if it's time to beep
   useEffect(() => {
-    if (isRunning && milliseconds > 0) {
+    if (isRunning && milliseconds > 0 && interval > 0) {
       // Beep when we reach or pass the next beep time
       if (milliseconds >= nextBeepAtRef.current) {
-        console.log(`Time to beep! Current time: ${milliseconds}ms, Next beep was set at: ${nextBeepAtRef.current}ms`);
-        playBeep();
+        console.log(`Time to beep! Current time: ${milliseconds}ms, Next beep was at: ${nextBeepAtRef.current}ms`);
+        // Try the beep
+        playBeep(800, 300, 1.0); // Higher volume (1.0) and longer duration (300ms)
         lastBeepRef.current = milliseconds;
         
         // Calculate next beep time
@@ -82,7 +112,11 @@ const StopwatchApp: React.FC = () => {
 
   const handleStart = useCallback(async () => {
     // Initialize audio context on first interaction
+    console.log('Start button clicked - ensuring audio is initialized');
     initAudio();
+    
+    // Play a test beep when starting
+    testBeep();
     
     // Calculate next beep time from current milliseconds
     const remainder = milliseconds % interval;
