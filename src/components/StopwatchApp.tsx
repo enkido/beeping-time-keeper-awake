@@ -1,11 +1,10 @@
-
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import TimerDisplay from '@/components/TimerDisplay';
 import IntervalInput from '@/components/IntervalInput';
 import ControlButtons from '@/components/ControlButtons';
 import WakeLockIndicator from '@/components/WakeLockIndicator';
 import { useWakeLock } from '@/hooks/useWakeLock';
-import { playBeep, initAudio, testBeep } from '@/utils/soundUtils';
+import { playBeep, initAudio } from '@/utils/soundUtils';
 import { useToast } from "@/hooks/use-toast";
 
 const StopwatchApp: React.FC = () => {
@@ -20,32 +19,14 @@ const StopwatchApp: React.FC = () => {
   const { toast } = useToast();
   const audioInitializedRef = useRef(false);
   
-  // Force immediate beep on first render to check audio
-  useEffect(() => {
-    const forcedTestTimeout = setTimeout(() => {
-      console.log('Forced initial audio test');
-      initAudio();
-    }, 500);
-    
-    return () => clearTimeout(forcedTestTimeout);
-  }, []);
-
-  // Initialize audio context on app load
+  // Initialize audio context silently on app load - but don't play any sound
   useEffect(() => {
     console.log('Initializing audio on app load');
     const initialized = initAudio();
     audioInitializedRef.current = initialized;
-    
-    // Test beep on first render with a delay to ensure browser is ready
-    const testTimeout = setTimeout(() => {
-      console.log('Testing initial beep');
-      testBeep();
-    }, 1000);
-    
-    return () => clearTimeout(testTimeout);
   }, []);
   
-  // Add listener for user interaction to initialize audio
+  // Add listener for user interaction to initialize audio - without playing sound
   useEffect(() => {
     console.log('Setting up user interaction listeners for audio');
     const interactionEvents = ['click', 'touchstart', 'keydown'];
@@ -122,12 +103,9 @@ const StopwatchApp: React.FC = () => {
   }, [milliseconds, interval, isRunning]);
 
   const handleStart = useCallback(async () => {
-    // Initialize audio context on first interaction
+    // Initialize audio context on first interaction - but don't play a test beep
     console.log('Start button clicked - ensuring audio is initialized');
     initAudio();
-    
-    // Play a test beep when starting
-    testBeep();
     
     // Calculate next beep time from current milliseconds
     const remainder = milliseconds % interval;
@@ -185,9 +163,6 @@ const StopwatchApp: React.FC = () => {
     setMilliseconds(0);
     lastBeepRef.current = 0;
     nextBeepAtRef.current = interval;
-    
-    // Play a beep to confirm reset
-    playBeep(440, 200, 0.8);
   }, [interval]);
 
   return (
