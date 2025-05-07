@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import TimerDisplay from '@/components/TimerDisplay';
 import IntervalInput from '@/components/IntervalInput';
@@ -18,6 +19,16 @@ const StopwatchApp: React.FC = () => {
   const nextBeepAtRef = useRef(0);
   const { toast } = useToast();
   const audioInitializedRef = useRef(false);
+  
+  // Force immediate beep on first render to check audio
+  useEffect(() => {
+    const forcedTestTimeout = setTimeout(() => {
+      console.log('Forced initial audio test');
+      initAudio();
+    }, 500);
+    
+    return () => clearTimeout(forcedTestTimeout);
+  }, []);
 
   // Initialize audio context on app load
   useEffect(() => {
@@ -48,9 +59,6 @@ const StopwatchApp: React.FC = () => {
       interactionEvents.forEach(event => {
         document.removeEventListener(event, handleUserInteraction);
       });
-      
-      // Test beep on user interaction
-      testBeep();
     };
     
     // Add listeners for user interaction events
@@ -89,18 +97,21 @@ const StopwatchApp: React.FC = () => {
     };
   }, []);
 
-  // Check if it's time to beep
+  // Check if it's time to beep - THIS IS THE MAIN BEEPING LOGIC
   useEffect(() => {
     if (isRunning && milliseconds > 0 && interval > 0) {
       // Beep when we reach or pass the next beep time
       if (milliseconds >= nextBeepAtRef.current) {
         console.log(`Time to beep! Current time: ${milliseconds}ms, Next beep was at: ${nextBeepAtRef.current}ms`);
-        // Try the beep
-        playBeep(800, 300, 1.0); // Higher volume (1.0) and longer duration (300ms)
+        
+        // Try multiple beeps for better chance of hearing
+        playBeep(880, 300, 1.0); // Higher frequency (880 Hz)
+        setTimeout(() => playBeep(660, 300, 1.0), 50); // Add a second beep with slight delay
+        
         lastBeepRef.current = milliseconds;
         
-        // Calculate next beep time
-        nextBeepAtRef.current = milliseconds + interval;
+        // Calculate next beep time (exactly interval ms in the future)
+        nextBeepAtRef.current = nextBeepAtRef.current + interval;
         console.log(`Next beep scheduled at: ${nextBeepAtRef.current}ms`);
         
         // Visual feedback when beeping
@@ -142,7 +153,13 @@ const StopwatchApp: React.FC = () => {
     }
     
     timerRef.current = window.setInterval(() => {
-      setMilliseconds(prev => prev + 10); // Update every 10 milliseconds
+      setMilliseconds(prev => {
+        // Log every second to help with debugging
+        if (prev % 1000 === 0) {
+          console.log(`Timer tick: ${prev}ms`);
+        }
+        return prev + 10; // Update every 10 milliseconds
+      });
     }, 10);
   }, [wakeLock, toast, milliseconds, interval]);
   
@@ -168,6 +185,9 @@ const StopwatchApp: React.FC = () => {
     setMilliseconds(0);
     lastBeepRef.current = 0;
     nextBeepAtRef.current = interval;
+    
+    // Play a beep to confirm reset
+    playBeep(440, 200, 0.8);
   }, [interval]);
 
   return (
