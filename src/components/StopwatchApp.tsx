@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import TimerDisplay from '@/components/TimerDisplay';
 import IntervalInput from '@/components/IntervalInput';
@@ -88,6 +89,7 @@ const StopwatchApp: React.FC = () => {
         // Try multiple beeps for better chance of hearing
         playBeep(880, 300, 1.0); // Higher frequency (880 Hz)
         setTimeout(() => playBeep(660, 300, 1.0), 50); // Add a second beep with slight delay
+        setTimeout(() => playBeep(770, 300, 1.0), 100); // Add a third beep for more certainty
         
         lastBeepRef.current = milliseconds;
         

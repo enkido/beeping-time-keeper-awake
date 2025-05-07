@@ -29,16 +29,18 @@ export const initAudio = (): boolean => {
   return audioInitialized;
 };
 
-// Alternative beep implementation using built-in Audio object
-// This works more reliably across browsers
+// Function to play a beep sound with configurable parameters
 export const playBeep = (frequency = 800, duration = 200, volume = 1.0): void => {
   try {
+    console.log(`Attempting to play beep: freq=${frequency}, duration=${duration}ms, volume=${volume}`);
+    
+    // Make sure audio is initialized
+    if (!audioInitialized) {
+      initAudio();
+    }
+    
     // First try using Web Audio API
-    if (audioInitialized || initAudio()) {
-      if (!audioContext) {
-        throw new Error('Audio context not available');
-      }
-      
+    if (audioContext) {
       // Resume audio context if it's suspended (browsers require user interaction)
       if (audioContext.state === 'suspended') {
         audioContext.resume().then(() => {
