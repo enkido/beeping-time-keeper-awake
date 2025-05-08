@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import TimerDisplay from '@/components/TimerDisplay';
 import IntervalInput from '@/components/IntervalInput';
@@ -34,8 +33,8 @@ const StopwatchApp: React.FC = () => {
     
     const handleUserInteraction = () => {
       console.log('User interaction detected - initializing audio');
-      initAudio();
-      audioInitializedRef.current = true;
+      const initialized = initAudio();
+      audioInitializedRef.current = initialized;
       
       // Remove all event listeners after first interaction
       interactionEvents.forEach(event => {
@@ -111,8 +110,8 @@ const StopwatchApp: React.FC = () => {
     
     // Calculate next beep time from current milliseconds
     const remainder = milliseconds % interval;
-    nextBeepAtRef.current = remainder === 0 ? 
-      milliseconds + interval : 
+    nextBeepAtRef.current = milliseconds === 0 ? 
+      interval : // first beep should be at the interval time
       milliseconds + (interval - remainder);
     
     console.log(`Timer started. Next beep scheduled at: ${nextBeepAtRef.current}ms`);
