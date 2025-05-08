@@ -10,6 +10,9 @@ const Index: React.FC = () => {
         <p className="text-gray-600 dark:text-gray-300 mt-2">
           Stoppt die Zeit und piept in konfigurierbaren Intervallen
         </p>
+        <p className="text-xs text-amber-600 mt-2">
+          Bitte erlauben Sie Audioberechtigungen und klicken Sie auf den Bildschirm, um die Audiofunktion zu aktivieren.
+        </p>
       </header>
       
       <main className="flex-grow flex items-center justify-center p-4">

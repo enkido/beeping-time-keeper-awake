@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import TimerDisplay from '@/components/TimerDisplay';
 import IntervalInput from '@/components/IntervalInput';
@@ -83,12 +84,20 @@ const StopwatchApp: React.FC = () => {
     if (isRunning && milliseconds > 0 && interval > 0) {
       // Beep when we reach or pass the next beep time
       if (milliseconds >= nextBeepAtRef.current) {
-        console.log(`Time to beep! Current time: ${milliseconds}ms, Next beep was at: ${nextBeepAtRef.current}ms`);
+        console.log(`🔊 TIME TO BEEP! Current time: ${milliseconds}ms, Next beep was at: ${nextBeepAtRef.current}ms`);
+        
+        // Initialize audio if not already done
+        if (!audioInitializedRef.current) {
+          initAudio();
+          audioInitializedRef.current = true;
+        }
         
         // Try multiple beeps for better chance of hearing
         playBeep(880, 300, 1.0); // Higher frequency (880 Hz)
-        setTimeout(() => playBeep(660, 300, 1.0), 50); // Add a second beep with slight delay
-        setTimeout(() => playBeep(770, 300, 1.0), 100); // Add a third beep for more certainty
+        
+        // Schedule additional beeps with slight delays for redundancy
+        setTimeout(() => playBeep(660, 300, 1.0), 50);
+        setTimeout(() => playBeep(770, 300, 1.0), 100);
         
         lastBeepRef.current = milliseconds;
         
@@ -107,6 +116,7 @@ const StopwatchApp: React.FC = () => {
     // Initialize audio context on first interaction - but don't play a test beep
     console.log('Start button clicked - ensuring audio is initialized');
     initAudio();
+    audioInitializedRef.current = true;
     
     // Calculate next beep time from current milliseconds
     const remainder = milliseconds % interval;
@@ -182,6 +192,17 @@ const StopwatchApp: React.FC = () => {
       <div className="flex justify-center pt-2">
         <WakeLockIndicator isSupported={wakeLock.isSupported} isActive={wakeLock.isActive} />
       </div>
+      
+      {/* Add a hidden button to ensure audio can be initialized by user interaction */}
+      <button 
+        className="opacity-0 absolute pointer-events-auto w-full h-full top-0 left-0 z-10"
+        onClick={() => {
+          console.log('Hidden button clicked for audio initialization');
+          initAudio();
+          audioInitializedRef.current = true;
+        }}
+        aria-hidden="true"
+      />
     </div>
   );
 };
