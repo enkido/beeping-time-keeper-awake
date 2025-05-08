@@ -10,8 +10,9 @@ const Index: React.FC = () => {
         <p className="text-gray-600 dark:text-gray-300 mt-2">
           Stoppt die Zeit und piept in konfigurierbaren Intervallen
         </p>
-        <p className="text-xs text-amber-600 mt-2">
-          Bitte erlauben Sie Audioberechtigungen und klicken Sie auf den Bildschirm, um die Audiofunktion zu aktivieren.
+        <p className="text-sm text-amber-700 mt-2 p-2 bg-amber-50 rounded-md inline-block">
+          <strong>Wichtig:</strong> Tippen Sie auf den "Audio aktivieren" Knopf 
+          und starten Sie dann den Timer, um die Beep-Funktion zu aktivieren.
         </p>
       </header>
       
