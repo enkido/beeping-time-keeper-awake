@@ -6,7 +6,7 @@
  * for the stopwatch. It integrates various custom hooks and UI components
  * to provide the complete stopwatch functionality.
  */
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import TimerDisplay from '@/components/TimerDisplay'; // Component to display the formatted time and visual beep indicator.
 import IntervalInput from '@/components/IntervalInput'; // Component for users to set the beep interval.
 import ControlButtons from '@/components/ControlButtons'; // Component providing start, stop, and reset buttons.
@@ -14,9 +14,7 @@ import WakeLockIndicator from '@/components/WakeLockIndicator'; // Component to 
 import AudioInitializer from '@/components/AudioInitializer'; // Component to handle user gesture for audio initialization.
 import { useStopwatch } from '@/hooks/useStopwatch'; // Custom hook for all stopwatch logic (time, state, interval beeps).
 import { useWakeLock } from '@/hooks/useWakeLock'; // Custom hook to manage screen wake lock.
-
-// Current version number - increment this with each code change
-const APP_VERSION = "1.0.0";
+import { useAppVersion } from '@/hooks/useAppVersion'; // Custom hook to get app version information
 
 /**
  * StopwatchApp is the main component that orchestrates the stopwatch application.
@@ -50,6 +48,9 @@ const StopwatchApp: React.FC = () => {
   // - `stopwatch.handleStop`: Function to pause the stopwatch.
   // - `stopwatch.handleReset`: Function to reset the stopwatch to zero.
   const stopwatch = useStopwatch();
+
+  // Get the version information
+  const { version } = useAppVersion();
   
   return (
     <div className="flex flex-col space-y-8 w-full max-w-md mx-auto">
@@ -91,10 +92,11 @@ const StopwatchApp: React.FC = () => {
       
       {/* Version indicator in bottom right corner */}
       <div className="fixed bottom-2 right-2 text-xs text-gray-500 dark:text-gray-400">
-        v{APP_VERSION}
+        v{version}
       </div>
     </div>
   );
 };
 
 export default StopwatchApp;
+
