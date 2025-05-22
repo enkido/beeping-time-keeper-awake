@@ -56,34 +56,33 @@ export function useStopwatch(initialInterval = 30000) {
       // When this effect runs (triggered by a change in `isRunning` or `interval`),
       // `milliseconds` (from useState) will hold the current up-to-date elapsed time.
       // This value is accessed directly from the state, ensuring it's the latest for the calculation.
-      if (milliseconds === 0) {
+      // This effect runs when `isRunning` becomes true or `interval` changes.
+      // It uses the `milliseconds` state value at the time of execution for its calculation.
+      const currentMilliseconds = milliseconds; // Capture current milliseconds for calculation
+      let calculatedNextBeepAt = 0;
+
+      if (currentMilliseconds === 0) {
         // Scenario: Stopwatch is starting from 0 (e.g., after reset and then start).
-        // The first beep is scheduled for when `milliseconds` reaches `interval`.
-        nextBeepAtRef.current = interval;
-        console.log(`[useStopwatch Effect - Reset] Next beep scheduled at: ${nextBeepAtRef.current}ms. Current: ${milliseconds}ms, Interval: ${interval}ms`);
+        calculatedNextBeepAt = interval;
       } else {
         // Scenario: Stopwatch is resuming, or the interval has been changed while running.
-        // Calculate the next beep time relative to the current `milliseconds` and the (potentially new) `interval`.
-        const remainder = milliseconds % interval;
+        // Calculate the next beep time relative to the current `currentMilliseconds` and `interval`.
+        const remainder = currentMilliseconds % interval;
         if (remainder === 0) {
-          // If current time is an exact multiple of the interval (e.g., paused exactly on a beep,
-          // or interval changed to now be a perfect multiple of current time),
-          // the next beep is one full `interval` duration from the current `milliseconds`.
-          nextBeepAtRef.current = milliseconds + interval;
+          // If current time is an exact multiple of the interval.
+          calculatedNextBeepAt = currentMilliseconds + interval;
         } else {
-          // Otherwise, schedule the beep for the next multiple of `interval` from the beginning.
-          // Example: interval=5000ms.
-          // If current=7000ms, remainder=2000ms. nextBeepAt = 7000 - 2000 + 5000 = 10000ms.
-          // If current=3000ms, remainder=3000ms. nextBeepAt = 3000 - 3000 + 5000 = 5000ms.
-          nextBeepAtRef.current = milliseconds - remainder + interval;
+          // Schedule for the next multiple of `interval` from the beginning.
+          calculatedNextBeepAt = currentMilliseconds - remainder + interval;
         }
-        console.log(`[useStopwatch Effect - Resume] Next beep scheduled at: ${nextBeepAtRef.current}ms. Current: ${milliseconds}ms, Interval: ${interval}ms, Remainder: ${remainder}ms`);
       }
+      nextBeepAtRef.current = calculatedNextBeepAt;
+      console.log(`[useStopwatch Effect - CalculateNextBeep] Next beep at: ${nextBeepAtRef.current}ms. Current: ${currentMilliseconds}ms, Interval: ${interval}ms`);
     }
     // This effect should only run when `isRunning` or `interval` changes.
     // It uses the `milliseconds` state value at the time of execution to make its calculation,
     // but it should NOT re-run *solely* because `milliseconds` changes.
-  }, [isRunning, interval, milliseconds]); // Added milliseconds as a dependency to ensure recalculation when interval changes
+  }, [isRunning, interval]); // REMOVED milliseconds from dependencies
 
   // Cleanup effect: Clears the stopwatch timer interval and releases the wake lock when the component unmounts.
   useEffect(() => {
@@ -129,21 +128,9 @@ export function useStopwatch(initialInterval = 30000) {
     }
     // This effect must run whenever `milliseconds`, `interval`, or `isRunning` changes,
     // as these are all critical to determining if and when a beep should occur.
-  }, [milliseconds, interval, isRunning, triggerIntervalBeepSequence]);
+  }, [milliseconds, isRunning, interval, triggerIntervalBeepSequence]);
 
-  // Watch for interval changes and recalculate next beep time when interval changes during running
-  useEffect(() => {
-    if (isRunning && interval > 0) {
-      // When interval changes while running, we need to recalculate the next beep time
-      const remainder = milliseconds % interval;
-      if (remainder === 0) {
-        nextBeepAtRef.current = milliseconds + interval;
-      } else {
-        nextBeepAtRef.current = milliseconds - remainder + interval;
-      }
-      console.log(`[useStopwatch Effect - IntervalChange] Interval changed to ${interval}ms. Next beep rescheduled for: ${nextBeepAtRef.current}ms. Current: ${milliseconds}ms`);
-    }
-  }, [interval, isRunning, milliseconds]);
+  // REMOVED redundant useEffect for interval changes while running
 
   const handleStart = useCallback(async () => {
     console.log('Start button clicked.');
@@ -193,8 +180,7 @@ export function useStopwatch(initialInterval = 30000) {
     // State setters (setIsRunning, setMilliseconds) from useState are guaranteed by React to be stable
     // and do not need to be listed in useCallback dependency arrays.
     // `triggerIntervalBeepSequence` is memoized with useCallback([]), so it's stable.
-    // `interval` and `milliseconds` are used in the log and are relevant for the context when `setIsRunning(true)` is called.
-  }, [wakeLock, toast, interval, milliseconds, triggerIntervalBeepSequence]); 
+  }, [wakeLock, toast, triggerIntervalBeepSequence]);
   
   const handleStop = useCallback(async () => {
     setIsRunning(false); // Stops the timer and prevents further beeps via the `isRunning` checks in useEffects.
@@ -239,6 +225,7 @@ export function useStopwatch(initialInterval = 30000) {
     // No need to interact with wakeLock here; `handleStop` (called by setIsRunning(false) if timer was running)
     // or the unmount cleanup would handle its release. If it wasn't running, wakeLock wouldn't be active.
     // State setters (`setIsRunning`, `setMilliseconds`) are stable and not required in deps.
+    // `interval` is a dependency because it's used to calculate `nextBeepAtRef.current`.
   }, [interval]);
 
   return {

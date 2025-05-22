@@ -16,92 +16,61 @@ const AudioInitializer: React.FC<AudioInitializerProps> = ({
   const { toast } = useToast();
   const isMobile = useIsMobile();
 
-  // Initialize audio context aggressively on app load
-  useEffect(() => {
-    console.log('Initializing audio on app load');
-    // Try to initialize audio immediately
-    const initialized = initAudio();
-    setAudioInitialized(initialized);
-    
-    // For Android compatibility, initialize audio again after a small delay
-    const timeoutId = setTimeout(() => {
-      const initialized = initAudio();
-      setAudioInitialized(initialized);
-      console.log('Delayed audio initialization:', initialized);
-    }, 500);
-    
-    return () => clearTimeout(timeoutId);
-  }, [setAudioInitialized]);
-  
-  // Try to initialize audio on any user interaction
-  useEffect(() => {
-    console.log('Setting up user interaction listeners for audio');
-    const interactionEvents = ['click', 'touchstart', 'keydown'];
-    
-    const handleUserInteraction = () => {
-      console.log('User interaction detected - initializing audio');
-      const initialized = initAudio();
-      setAudioInitialized(initialized);
-      
-      // Play a test beep with very low volume (almost silent)
-      try {
-        const testAudio = new Audio();
-        testAudio.volume = 0.01; // Very low volume
-        testAudio.play().catch(() => {}); // Ignore errors
-      } catch (e) {
-        // Ignore errors
-      }
-    };
-    
-    // Add listeners for user interaction events
-    interactionEvents.forEach(event => {
-      document.addEventListener(event, handleUserInteraction);
-    });
-    
-    // Clean up listeners on unmount
-    return () => {
-      interactionEvents.forEach(event => {
-        document.removeEventListener(event, handleUserInteraction);
-      });
-    };
-  }, [setAudioInitialized]);
+  // Removed useEffect hooks for aggressive/automatic audio initialization.
+  // Audio initialization is now primarily triggered by user interaction
+  // via the button or the mobile overlay.
 
   const handleAudioInit = () => {
-    console.log('Manual audio initialization requested');
-    const success = initAudio();
-    setAudioInitialized(success);
+    console.log('[AudioInitializer] Manual audio initialization requested.');
+    const success = initAudio(); // Call the updated initAudio from soundUtils
+    setAudioInitialized(success); // Update state based on the result
     
     if (success) {
-      // Play a test beep
-      playBeep(440, 100, 0.1);
+      console.log('[AudioInitializer] Audio initialized successfully via button/overlay.');
+      // Play a test beep as feedback
+      playBeep(440, 150, 0.2); // Slightly more noticeable test beep
       toast({
-        title: "Audio aktiviert",
-        description: "Audio wurde initialisiert. Beeps sollten jetzt funktionieren.",
+        title: "Audio Aktiviert",
+        description: "Das Audiosystem ist jetzt bereit. Beep-Töne werden abgespielt.",
+      });
+    } else {
+      console.warn('[AudioInitializer] Audio initialization failed or requires further interaction.');
+      toast({
+        title: "Audio Aktivierung Ausstehend",
+        description: "Audio konnte nicht sofort aktiviert werden. Interaktion mit der Seite könnte erforderlich sein oder Ihr Browser unterstützt es nicht.",
+        variant: "destructive",
       });
     }
   };
 
   return (
     <>
+      {/* Button is always available if direct interaction is preferred or needed */}
       <button
-        className="text-sm px-4 py-2 bg-amber-100 hover:bg-amber-200 text-amber-800 rounded-md"
-        onClick={handleAudioInit}
+        className={`text-sm px-4 py-2 rounded-md ${
+          audioInitialized
+            ? "bg-green-100 text-green-800 cursor-not-allowed"
+            : "bg-amber-100 hover:bg-amber-200 text-amber-800"
+        }`}
+        onClick={!audioInitialized ? handleAudioInit : undefined}
+        disabled={audioInitialized}
       >
-        Audio aktivieren
+        {audioInitialized ? "Audio Aktiviert" : "Audio Aktivieren"}
       </button>
       
-      {/* Special button that covers the whole screen for first touch on Android */}
+      {/* Full-screen overlay for initial touch on mobile, shown only if audio is not yet initialized. */}
       {isMobile && !audioInitialized && (
         <div 
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 backdrop-blur-sm"
           onClick={() => {
-            handleAudioInit();
-            // Remove the overlay after initialization
-            setAudioInitialized(true);
+            console.log('[AudioInitializer] Mobile overlay clicked.');
+            handleAudioInit(); // Use the same handler
+            // The overlay will disappear automatically if audioInitialized becomes true
+            // due to the conditional rendering `!audioInitialized`.
           }}
         >
           <div className="bg-white p-6 rounded-lg shadow-lg max-w-xs text-center">
-            <h3 className="text-lg font-semibold mb-2">Audio aktivieren</h3>
+            <h3 className="text-lg font-semibold mb-2">Audio Aktivieren</h3>
             <p className="mb-4">Bitte tippen Sie auf den Bildschirm, um die Audiofunktion zu aktivieren.</p>
             <button className="bg-amber-500 text-white px-4 py-2 rounded-md">
               Hier tippen
