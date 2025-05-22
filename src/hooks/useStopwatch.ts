@@ -36,9 +36,7 @@ export function useStopwatch(initialInterval = 30000) {
     // Ensure audio is initialized before attempting to play.
     // This is particularly important for browsers requiring user interaction.
     initAudio(); 
-    playBeep(880, 300, 1.0); // Main beep (Higher frequency: 880 Hz for prominence)
-    setTimeout(() => playBeep(660, 300, 1.0), 50); // Second beep, slightly different tone
-    setTimeout(() => playBeep(770, 300, 1.0), 100); // Third beep, another variation
+    playBeep(880, 300, 1.0); // Play a single, clear beep.
   }, []); // This function has no dependencies from the hook's scope, so it's stable.
 
   // Effect to calculate and set the `nextBeepAtRef.current` timestamp.
