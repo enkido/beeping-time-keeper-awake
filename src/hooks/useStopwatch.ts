@@ -60,6 +60,7 @@ export function useStopwatch(initialInterval = 30000) {
         // Scenario: Stopwatch is starting from 0 (e.g., after reset and then start).
         // The first beep is scheduled for when `milliseconds` reaches `interval`.
         nextBeepAtRef.current = interval;
+        console.log(`[useStopwatch Effect - Reset] Next beep scheduled at: ${nextBeepAtRef.current}ms. Current: ${milliseconds}ms, Interval: ${interval}ms`);
       } else {
         // Scenario: Stopwatch is resuming, or the interval has been changed while running.
         // Calculate the next beep time relative to the current `milliseconds` and the (potentially new) `interval`.
@@ -76,13 +77,13 @@ export function useStopwatch(initialInterval = 30000) {
           // If current=3000ms, remainder=3000ms. nextBeepAt = 3000 - 3000 + 5000 = 5000ms.
           nextBeepAtRef.current = milliseconds - remainder + interval;
         }
+        console.log(`[useStopwatch Effect - Resume] Next beep scheduled at: ${nextBeepAtRef.current}ms. Current: ${milliseconds}ms, Interval: ${interval}ms, Remainder: ${remainder}ms`);
       }
-      console.log(`[useStopwatch Effect - CalculateNextBeep] Next beep scheduled at: ${nextBeepAtRef.current}ms. Current: ${milliseconds}ms, Interval: ${interval}ms`);
     }
     // This effect should only run when `isRunning` or `interval` changes.
     // It uses the `milliseconds` state value at the time of execution to make its calculation,
-    // but it should NOT re-run *solely* because `milliseconds` changes. This was the core of the original bug.
-  }, [isRunning, interval]); // Dependencies: `isRunning` and `interval`. This is the corrected and intended state.
+    // but it should NOT re-run *solely* because `milliseconds` changes.
+  }, [isRunning, interval, milliseconds]); // Added milliseconds as a dependency to ensure recalculation when interval changes
 
   // Cleanup effect: Clears the stopwatch timer interval and releases the wake lock when the component unmounts.
   useEffect(() => {
@@ -106,7 +107,7 @@ export function useStopwatch(initialInterval = 30000) {
       // Check if the current elapsed time (`milliseconds`) has reached or passed the scheduled `nextBeepAtRef.current`.
       // Using `>=` handles cases where the exact millisecond might be skipped by `setInterval` timing.
       if (milliseconds >= nextBeepAtRef.current) {
-        console.log(`🔊 TIME TO BEEP! Current time: ${milliseconds}ms, Next beep was scheduled for: ${nextBeepAtRef.current}ms`);
+        console.log(`🔊 TIME TO BEEP! Current time: ${milliseconds}ms, Next beep was scheduled for: ${nextBeepAtRef.current}ms, Interval: ${interval}ms`);
         
         triggerIntervalBeepSequence(); // Play the beep sound sequence.
         
@@ -128,8 +129,21 @@ export function useStopwatch(initialInterval = 30000) {
     }
     // This effect must run whenever `milliseconds`, `interval`, or `isRunning` changes,
     // as these are all critical to determining if and when a beep should occur.
-    // `triggerIntervalBeepSequence` is added as it's a `useCallback`-memoized function used inside.
   }, [milliseconds, interval, isRunning, triggerIntervalBeepSequence]);
+
+  // Watch for interval changes and recalculate next beep time when interval changes during running
+  useEffect(() => {
+    if (isRunning && interval > 0) {
+      // When interval changes while running, we need to recalculate the next beep time
+      const remainder = milliseconds % interval;
+      if (remainder === 0) {
+        nextBeepAtRef.current = milliseconds + interval;
+      } else {
+        nextBeepAtRef.current = milliseconds - remainder + interval;
+      }
+      console.log(`[useStopwatch Effect - IntervalChange] Interval changed to ${interval}ms. Next beep rescheduled for: ${nextBeepAtRef.current}ms. Current: ${milliseconds}ms`);
+    }
+  }, [interval, isRunning, milliseconds]);
 
   const handleStart = useCallback(async () => {
     console.log('Start button clicked.');
