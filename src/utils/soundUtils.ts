@@ -1,21 +1,42 @@
 
-// Audio context for playing beep sounds
+// src/utils/soundUtils.ts
+/**
+ * @file soundUtils.ts
+ * This module provides utility functions for handling audio playback,
+ * specifically for initializing the audio context and playing beep sounds.
+ * It includes fallbacks and workarounds for browser compatibility, especially on mobile devices.
+ */
+
+// Global AudioContext instance. Initialized once by initAudio().
 let audioContext: AudioContext | null = null;
+// Flag to track if audio initialization has been attempted and was successful.
 let audioInitialized = false;
+// HTMLAudioElement used as a fallback or for specific platforms like Android.
 let audioElement: HTMLAudioElement | null = null;
 
-// Initialize the audio system with multiple approaches
+/**
+ * Initializes the audio system. This function should be called once, ideally
+ * as a result of a user interaction (e.g., a button click), to comply with
+ * browser autoplay policies.
+ * It attempts to create a Web Audio API AudioContext and an HTMLAudioElement
+ * as a fallback and for platforms requiring it (like Android for reliable playback).
+ * A silent sound is played on the audioElement to "unlock" audio capabilities on some mobile browsers.
+ *
+ * @returns {boolean} True if audio was successfully initialized (or already was), false otherwise.
+ */
 export const initAudio = (): boolean => {
   console.log('Initializing audio system...');
   
+  // Attempt initialization only if not already done.
   if (!audioContext) {
     try {
-      // Create Web Audio API context
+      // Create Web Audio API context. Uses `webkitAudioContext` for older Safari compatibility.
       const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
       audioContext = new AudioContextClass();
       console.log('Audio context created:', audioContext.state);
       
-      // Try to resume it immediately (might need user interaction)
+      // If the audio context is created in a suspended state, try to resume it.
+      // This is common in browsers before a user interaction.
       if (audioContext.state === 'suspended') {
         audioContext.resume().then(() => {
           console.log('AudioContext resumed on init');
