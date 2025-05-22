@@ -15,6 +15,9 @@ import AudioInitializer from '@/components/AudioInitializer'; // Component to ha
 import { useStopwatch } from '@/hooks/useStopwatch'; // Custom hook for all stopwatch logic (time, state, interval beeps).
 import { useWakeLock } from '@/hooks/useWakeLock'; // Custom hook to manage screen wake lock.
 
+// Current version number - increment this with each code change
+const APP_VERSION = "1.0.0";
+
 /**
  * StopwatchApp is the main component that orchestrates the stopwatch application.
  * It integrates:
@@ -84,6 +87,11 @@ const StopwatchApp: React.FC = () => {
           audioInitialized={audioInitialized} 
           setAudioInitialized={setAudioInitialized} 
         />
+      </div>
+      
+      {/* Version indicator in bottom right corner */}
+      <div className="fixed bottom-2 right-2 text-xs text-gray-500 dark:text-gray-400">
+        v{APP_VERSION}
       </div>
     </div>
   );
