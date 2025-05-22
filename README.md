@@ -1,8 +1,32 @@
-# Welcome to your Lovable project
+# Interval Timer App
 
-## Project info
+This project is a simple, user-friendly interval timer designed for various activities like workouts, study sessions (e.g., Pomodoro Technique), or any task requiring timed intervals with auditory and visual cues.
 
-**URL**: https://lovable.dev/projects/ddbfb465-c190-498f-8701-3efd2b204643
+## Project Overview
+
+The application provides a stopwatch with the ability to set custom intervals. When the stopwatch is running, it will emit a beep sound and provide visual feedback at each specified interval.
+
+**Key Features:**
+
+*   **Standard Stopwatch Controls:** Start, stop, and reset the timer.
+*   **Customizable Interval Beeping:** Users can define an interval in seconds. The app will beep and provide a visual cue each time this interval elapses while the stopwatch is running.
+*   **Visual Feedback:** The timer display pulses when an interval beep occurs.
+*   **Screen Wake Lock:** The application attempts to keep the device's screen awake while the timer is active to prevent interruptions. A visual indicator shows the status of the wake lock.
+*   **Audio Initialization:** On some browsers, user interaction (clicking a button) is required to enable audio playback. The app provides an "Initialize Audio" button for this purpose.
+
+**Technology Stack:**
+
+*   React
+*   TypeScript
+*   Vite
+*   Tailwind CSS
+*   shadcn-ui (for UI components)
+
+## Usage Notes
+
+*   **Interval Setting:** The interval for beeps is set in seconds. You can input a number directly or use simple mathematical expressions (e.g., `1.5*60` for 90 seconds).
+*   **Audio:** Ensure your device's volume is up to hear the beeps. If you don't hear sounds initially, click the "Initialize Audio" button.
+*   **Screen Wake Lock:** While the app attempts to keep the screen on, browser support for the Wake Lock API can vary. An indicator will show if the feature is active.
 
 ## How can I edit this code?
 
