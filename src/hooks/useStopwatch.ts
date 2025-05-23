@@ -186,6 +186,7 @@ export function useStopwatch(eventEmitter: EventEmitter, initialInterval = 30000
   }, [wakeLock, toast, eventEmitter, interval]);
   
   const handleStop = useCallback(async () => {
+    console.log('[useStopwatch] handleStop CALLED');
     setIsRunning(false); // Stops the timer and prevents further beeps via the `isRunning` checks in useEffects.
     eventEmitter.emit("stopwatchStopped", { stopTime: milliseconds }); // milliseconds here will be the value at execution time
     console.log(`[useStopwatch] Event "stopwatchStopped" emitted with stopTime: ${milliseconds}ms`);
@@ -212,6 +213,7 @@ export function useStopwatch(eventEmitter: EventEmitter, initialInterval = 30000
   }, [wakeLock, toast, eventEmitter]);
   
   const handleReset = useCallback(() => {
+    console.log('[useStopwatch] handleReset CALLED, setting isRunning to false.');
     setIsRunning(false); // Ensure the timer is stopped.
     setMilliseconds(0);   // Reset elapsed time to zero.
     eventEmitter.emit("stopwatchReset");
