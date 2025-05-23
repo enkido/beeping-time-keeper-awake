@@ -182,12 +182,12 @@ export function useStopwatch(eventEmitter: EventEmitter, initialInterval = 30000
     }, 10);
     // State setters (setIsRunning, setMilliseconds) from useState are guaranteed by React to be stable
     // and do not need to be listed in useCallback dependency arrays.
-    // `triggerIntervalBeepSequence` is memoized with useCallback, ensure `eventEmitter` and `milliseconds` are dependencies if used.
-  }, [wakeLock, toast, eventEmitter, milliseconds, triggerIntervalBeepSequence]); // Added eventEmitter and milliseconds
+    // `interval` is included because it's used in a log message and influences nextBeepAtRef calculation triggered by `setIsRunning`.
+  }, [wakeLock, toast, eventEmitter, interval]);
   
   const handleStop = useCallback(async () => {
     setIsRunning(false); // Stops the timer and prevents further beeps via the `isRunning` checks in useEffects.
-    eventEmitter.emit("stopwatchStopped", { stopTime: milliseconds });
+    eventEmitter.emit("stopwatchStopped", { stopTime: milliseconds }); // milliseconds here will be the value at execution time
     console.log(`[useStopwatch] Event "stopwatchStopped" emitted with stopTime: ${milliseconds}ms`);
     
     // Clear the interval timer.
@@ -209,7 +209,7 @@ export function useStopwatch(eventEmitter: EventEmitter, initialInterval = 30000
         // Optionally, notify the user if release failed, though it's less critical than acquisition failure.
       }
     }
-  }, [wakeLock, toast, eventEmitter, milliseconds]); // Added eventEmitter and milliseconds
+  }, [wakeLock, toast, eventEmitter]);
   
   const handleReset = useCallback(() => {
     setIsRunning(false); // Ensure the timer is stopped.
