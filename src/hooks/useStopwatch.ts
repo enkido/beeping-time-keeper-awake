@@ -18,6 +18,11 @@ export function useStopwatch(eventEmitter: EventEmitter, initialInterval = 30000
   // State to indicate if a beep is currently active, primarily for visual feedback in the UI.
   const [isBeeping, setIsBeeping] = useState(false);
 
+  // Temporary useEffect for debugging milliseconds state changes
+  useEffect(() => {
+    console.log('[useStopwatch] milliseconds state changed:', milliseconds);
+  }, [milliseconds]);
+
   const wakeLock = useWakeLock();
   // Ref to store the ID of the `setInterval` timer used for the stopwatch ticks.
   // This allows clearing the interval when the stopwatch is stopped or the component unmounts.
