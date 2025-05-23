@@ -1,13 +1,14 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { useWakeLock } from '@/hooks/useWakeLock';
 import { useToast } from "@/hooks/use-toast";
-import { playBeep, initAudio } from '@/utils/soundUtils';
+import EventEmitter from '@/lib/EventEmitter'; // Import EventEmitter
 
 /**
  * Custom hook for stopwatch functionality with interval beeps.
+ * @param eventEmitter - An instance of EventEmitter.
  * @param initialInterval - The initial interval in milliseconds for beeps. Defaults to 30000ms (30 seconds).
  */
-export function useStopwatch(initialInterval = 30000) {
+export function useStopwatch(eventEmitter: EventEmitter, initialInterval = 30000) {
   // State for the elapsed time in milliseconds. Updated every 10ms by `timerRef` interval.
   const [milliseconds, setMilliseconds] = useState(0);
   // State to track if the stopwatch is currently running.
@@ -33,11 +34,10 @@ export function useStopwatch(initialInterval = 30000) {
    * especially on mobile devices which can have quirks with single, short audio plays.
    */
   const triggerIntervalBeepSequence = useCallback(() => {
-    // Ensure audio is initialized before attempting to play.
-    // This is particularly important for browsers requiring user interaction.
-    initAudio(); 
-    playBeep(880, 300, 1.0); // Play a single, clear beep.
-  }, []); // This function has no dependencies from the hook's scope, so it's stable.
+    // Emit an event instead of playing a sound directly.
+    eventEmitter.emit("timeReached", { currentTime: milliseconds });
+    console.log(`[useStopwatch] Event "timeReached" emitted with currentTime: ${milliseconds}ms`);
+  }, [eventEmitter, milliseconds]); // Dependencies updated
 
   // Effect to calculate and set the `nextBeepAtRef.current` timestamp.
   // This effect is crucial for determining when the next interval beep should occur.
@@ -133,14 +133,12 @@ export function useStopwatch(initialInterval = 30000) {
   // REMOVED redundant useEffect for interval changes while running
 
   const handleStart = useCallback(async () => {
-    console.log('Start button clicked.');
-    initAudio(); // Initialize audio context on user gesture, crucial for some browsers (e.g., mobile).
+    console.log('[useStopwatch] Start button clicked.');
     
-    // Play a short, low-volume test beep for immediate feedback that start was registered.
-    // This also helps in further ensuring the audio context is active.
-    playBeep(440, 100, 0.1); 
+    setIsRunning(true);
+    eventEmitter.emit("stopwatchStarted", { startTime: milliseconds });
+    console.log(`[useStopwatch] Event "stopwatchStarted" emitted with startTime: ${milliseconds}ms`);
     
-    setIsRunning(true); 
     // Setting isRunning to true will trigger the `useEffect([isRunning, interval])`
     // (which correctly accesses the current `milliseconds` state within its closure)
     // to calculate/re-calculate `nextBeepAtRef.current`.
@@ -179,11 +177,13 @@ export function useStopwatch(initialInterval = 30000) {
     }, 10);
     // State setters (setIsRunning, setMilliseconds) from useState are guaranteed by React to be stable
     // and do not need to be listed in useCallback dependency arrays.
-    // `triggerIntervalBeepSequence` is memoized with useCallback([]), so it's stable.
-  }, [wakeLock, toast, triggerIntervalBeepSequence]);
+    // `triggerIntervalBeepSequence` is memoized with useCallback, ensure `eventEmitter` and `milliseconds` are dependencies if used.
+  }, [wakeLock, toast, eventEmitter, milliseconds, triggerIntervalBeepSequence]); // Added eventEmitter and milliseconds
   
   const handleStop = useCallback(async () => {
     setIsRunning(false); // Stops the timer and prevents further beeps via the `isRunning` checks in useEffects.
+    eventEmitter.emit("stopwatchStopped", { stopTime: milliseconds });
+    console.log(`[useStopwatch] Event "stopwatchStopped" emitted with stopTime: ${milliseconds}ms`);
     
     // Clear the interval timer.
     if (timerRef.current !== null) {
@@ -204,11 +204,13 @@ export function useStopwatch(initialInterval = 30000) {
         // Optionally, notify the user if release failed, though it's less critical than acquisition failure.
       }
     }
-  }, [wakeLock, toast]);
+  }, [wakeLock, toast, eventEmitter, milliseconds]); // Added eventEmitter and milliseconds
   
   const handleReset = useCallback(() => {
     setIsRunning(false); // Ensure the timer is stopped.
     setMilliseconds(0);   // Reset elapsed time to zero.
+    eventEmitter.emit("stopwatchReset");
+    console.log('[useStopwatch] Event "stopwatchReset" emitted.');
     lastBeepRef.current = 0; // Reset the last beep time.
     
     // When resetting, if the timer is started again (`isRunning` becomes true & `milliseconds` is 0),
@@ -226,7 +228,7 @@ export function useStopwatch(initialInterval = 30000) {
     // or the unmount cleanup would handle its release. If it wasn't running, wakeLock wouldn't be active.
     // State setters (`setIsRunning`, `setMilliseconds`) are stable and not required in deps.
     // `interval` is a dependency because it's used to calculate `nextBeepAtRef.current`.
-  }, [interval]);
+  }, [interval, eventEmitter]); // Added eventEmitter
 
   return {
     milliseconds,
